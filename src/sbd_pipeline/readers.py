@@ -13,5 +13,5 @@ class PyMuPDFReader(DocumentReader):
             text_content.append(page.get_text())
         doc.close()
         
-        # Join pages with spaces to maintain single-string continuity
-        return "\n".join(text_content)
+        # Trả về danh sách text theo từng trang (pages) để dễ dàng Multi-threading
+        return text_content

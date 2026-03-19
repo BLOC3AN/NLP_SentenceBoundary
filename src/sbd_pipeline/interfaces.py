@@ -6,7 +6,7 @@ class DocumentReader(ABC):
     """Interface for reading documents (PDF, Word, TXT, etc.)."""
     
     @abstractmethod
-    def read(self, file_path: str) -> str:
+    def read(self, file_path: str) -> List[str]:
         pass
 
 
