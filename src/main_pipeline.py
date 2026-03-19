@@ -1,23 +1,34 @@
 import os
 import argparse
 import sys
+from dotenv import load_dotenv
+
 from sbd_pipeline.readers import PyMuPDFReader
 from sbd_pipeline.normalizers import VietnameseTextNormalizer
 from sbd_pipeline.models import OnnxSentenceBoundaryDetector
 from sbd_pipeline.pipeline import SBDPipeline
 
-
 def main():
+    # Nạp biến môi trường từ file .env
+    load_dotenv()
+    
     parser = argparse.ArgumentParser(description="A SOLID pipeline for PDF Sentence Boundary Detection.")
     parser.add_argument("--pdf", type=str, required=True, help="Đường dẫn đến file PDF")
     
-    # Các path model lưu theo dạng Hardcode mặc định nếu không truyền argument
+    # Các path model thay đổi ưu tiên lấy từ ENV, nếu không có mới lấy mặc định
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     default_onnx = os.path.join(base_dir, "models", "sbd_49lang_bert_small.onnx")
     default_sp = os.path.join(base_dir, "models", "spe_mixed_case_64k_49lang.model")
     
-    parser.add_argument("--onnx", type=str, default=default_onnx, help="Đường dẫn tới file ONNX")
-    parser.add_argument("--sp", type=str, default=default_sp, help="Đường dẫn tới mô hình SentencePiece")
+    env_onnx = os.getenv("ONNX_MODEL_PATH", default_onnx)
+    env_sp = os.getenv("SP_MODEL_PATH", default_sp)
+    env_threshold = float(os.getenv("THRESHOLD", 0.5))
+    env_max_seq_len = int(os.getenv("MAX_SEQ_LEN", 200))
+
+    parser.add_argument("--onnx", type=str, default=env_onnx, help="Đường dẫn tới file ONNX")
+    parser.add_argument("--sp", type=str, default=env_sp, help="Đường dẫn tới mô hình SentencePiece")
+    parser.add_argument("--threshold", type=float, default=env_threshold, help="Ngưỡng cắt câu (0.0-1.0)")
+    parser.add_argument("--max_seq_len", type=int, default=env_max_seq_len, help="Giới hạn positional embedding tối đa")
     args = parser.parse_args()
 
     if not os.path.exists(args.pdf):
@@ -30,8 +41,8 @@ def main():
     detector = OnnxSentenceBoundaryDetector(
         onnx_model_path=args.onnx,
         sp_model_path=args.sp,
-        threshold=0.5,
-        max_seq_len=200
+        threshold=args.threshold,
+        max_seq_len=args.max_seq_len
     )
 
     # Đưa các Interface cụ thể vào trong Pipeline
